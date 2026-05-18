@@ -34,7 +34,8 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
 
     res.status(201).json({ user, token });
   } catch (err) {
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    console.error(err);
+    res.status(500).json({ error: 'Erro interno do servidor', details: err });
   }
 });
 
