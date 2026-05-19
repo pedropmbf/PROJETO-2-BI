@@ -107,6 +107,7 @@ gamelog/
 │   │   │   ├── Library/        # Biblioteca do usuário
 │   │   │   ├── Reviews/        # Avaliações
 │   │   │   ├── Forum/          # Fórum e posts
+|   |   |   ├── Quiz/           # Quiz
 │   │   │   ├── Ranking/        # Ranking de jogadores
 │   │   │   └── Profile/        # Perfil do usuário
 │   │   ├── components/         # Componentes compartilhados (Navbar)
