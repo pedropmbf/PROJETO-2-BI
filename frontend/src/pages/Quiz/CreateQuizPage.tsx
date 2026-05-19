@@ -56,9 +56,9 @@ export default function CreateQuizPage() {
 
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
-      if (!q.text.trim()) { setError(Pergunta ${i + 1}: texto obrigatório); return; }
+      if (!q.text.trim()) { setError(`Pergunta ${i + 1}: texto obrigatório`); return; }
       if (q.options.some((o) => !o.trim())) {
-        setError(Pergunta ${i + 1}: preencha todas as alternativas);
+        setError(`Pergunta ${i + 1}: preencha todas as alternativas`);
         return;
       }
     }
@@ -66,7 +66,7 @@ export default function CreateQuizPage() {
     setLoading(true);
     try {
       const { data } = await api.post('/api/quizzes', { title, description, questions });
-      navigate(/quiz/${data.id}/play);
+      navigate(`/quiz/${data.id}/play`);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erro ao criar quiz');
     } finally {
@@ -139,7 +139,7 @@ export default function CreateQuizPage() {
               </button>
               <input
                 style={{ ...styles.input, margin: 0, flex: 1 }}
-                placeholder={Alternativa ${String.fromCharCode(65 + oi)}}
+                placeholder={`Alternativa ${String.fromCharCode(65 + oi)}`}
                 value={opt}
                 onChange={(e) => updateOption(qi, oi, e.target.value)}
               />

@@ -101,7 +101,7 @@ export default function QuizRankingPage() {
                     <div
                       style={{
                         ...styles.barFill,
-                        width: ${pct}%,
+                        width: `${pct}%`,
                         background: pct >= 70 ? '#2ecc71' : pct >= 40 ? '#f39c12' : '#e94560',
                       }}
                     />
