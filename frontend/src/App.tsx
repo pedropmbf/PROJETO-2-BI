@@ -10,6 +10,11 @@ import ForumPage from './pages/Forum/ForumPage';
 import ForumPostPage from './pages/Forum/ForumPostPage';
 import RankingPage from './pages/Ranking/RankingPage';
 import ProfilePage from './pages/Profile/ProfilePage';
+import QuizListPage from './pages/Quiz/QuizListPage';
+import QuizPlayPage from './pages/Quiz/QuizPlayPage';
+import QuizResultPage from './pages/Quiz/QuizResultPage';
+import QuizRankingPage from './pages/Quiz/QuizRankingPage';
+import CreateQuizPage from './pages/Quiz/CreateQuizPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -31,6 +36,11 @@ function AppRoutes() {
         <Route path="/library" element={<PrivateRoute><LibraryPage /></PrivateRoute>} />
         <Route path="/reviews" element={<PrivateRoute><ReviewsPage /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        <Route path="/quiz" element={<QuizListPage />} />
+        <Route path="/quiz/criar" element={<PrivateRoute><CreateQuizPage /></PrivateRoute>} />
+        <Route path="/quiz/:id/play" element={<QuizPlayPage />} />
+        <Route path="/quiz/:id/resultado" element={<QuizResultPage />} />
+        <Route path="/quiz/:id/ranking" element={<QuizRankingPage />} />
       </Routes>
     </>
   );

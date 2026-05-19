@@ -8,6 +8,7 @@ import reviewsRoutes from './routes/reviews.routes';
 import forumRoutes from './routes/forum.routes';
 import rankingRoutes from './routes/ranking.routes';
 import usersRoutes from './routes/users.routes';
+import quizRoutes from './routes/quiz.routes';
 
 dotenv.config();
 
@@ -27,5 +28,6 @@ app.use('/api/reviews', reviewsRoutes);
 app.use('/api/forum', forumRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/quizzes', quizRoutes);
 
 export default app;

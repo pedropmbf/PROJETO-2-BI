@@ -22,6 +22,7 @@ export default function Navbar() {
           </>
         )}
         <Link to="/forum" style={styles.link}>Fórum</Link>
+        <Link to="/quiz" style={styles.link}>Quiz</Link>
         <Link to="/ranking" style={styles.link}>Ranking</Link>
         {isAuthenticated ? (
           <>
