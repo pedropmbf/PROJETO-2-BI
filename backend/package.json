@@ -12,7 +12,11 @@
     "db:studio": "prisma studio",
     "db:seed": "ts-node prisma/seed.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:report": "vitest run --coverage",
+    "lint": "eslint src",
+    "lint:report": "eslint src --format html --output-file eslint-report.html || node -e \"console.log('Relatório HTML gerado em backend/eslint-report.html')\""
   },
   "keywords": [],
   "author": "",
@@ -28,16 +32,22 @@
     "prisma": "^6.19.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.7.0",
     "@types/supertest": "^7.2.0",
+    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/ui": "^4.1.7",
+    "eslint": "^10.4.0",
+    "eslint-plugin-sonarjs": "^4.0.3",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.4",
     "vitest": "^4.1.6"
   }
 }

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { User } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function ProfilePage() {
-  useAuth();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -35,6 +37,20 @@ export default function ProfilePage() {
       setEditing(false);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erro ao atualizar perfil');
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmation = prompt(
+      'Esta ação é IRREVERSÍVEL. Sua conta, biblioteca, reviews, posts, comentários e quizzes serão excluídos.\n\nDigite "EXCLUIR" para confirmar:'
+    );
+    if (confirmation !== 'EXCLUIR') return;
+    try {
+      await api.delete('/api/users/me');
+      logout();
+      navigate('/login', { replace: true });
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro ao excluir conta');
     }
   };
 
@@ -95,6 +111,12 @@ export default function ProfilePage() {
           <button style={styles.btn} onClick={() => setEditing(true)}>Editar Perfil</button>
         )}
       </div>
+
+      <div style={styles.dangerZone}>
+        <h3 style={styles.dangerTitle}>Zona de Perigo</h3>
+        <p style={styles.dangerText}>Excluir sua conta remove permanentemente todos os seus dados (biblioteca, reviews, posts, comentários e quizzes).</p>
+        <button style={styles.dangerBtn} onClick={handleDeleteAccount}>Excluir minha conta</button>
+      </div>
     </div>
   );
 }
@@ -120,4 +142,8 @@ const styles: Record<string, React.CSSProperties> = {
   formActions: { display: 'flex', gap: '10px' },
   btn: { padding: '10px 20px', background: '#e94560', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' },
   cancelBtn: { padding: '10px 20px', background: 'transparent', color: '#aaa', border: '1px solid #333', borderRadius: '4px', cursor: 'pointer' },
+  dangerZone: { marginTop: '32px', padding: '20px', border: '1px solid #e9456060', borderRadius: '8px', background: '#16213e' },
+  dangerTitle: { color: '#e94560', margin: '0 0 8px', fontSize: '1.1rem' },
+  dangerText: { color: '#888', fontSize: '0.85rem', margin: '0 0 16px', lineHeight: '1.5' },
+  dangerBtn: { padding: '10px 20px', background: 'transparent', color: '#e94560', border: '1px solid #e94560', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' },
 };

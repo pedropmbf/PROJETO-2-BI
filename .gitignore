@@ -27,3 +27,11 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Test artifacts
+backend/coverage/
+backend/test-report/
+backend/eslint-report.html
+playwright-report/
+e2e/test-results/
+e2e/playwright/.cache/

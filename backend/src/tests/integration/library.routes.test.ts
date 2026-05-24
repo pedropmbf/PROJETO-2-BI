@@ -81,6 +81,7 @@ describe('POST /api/library', () => {
     expect(res.body.error).toBe('Jogo já está na sua biblioteca');
   });
 
+  // CT-15
   it('retorna 401 sem token de autenticação', async () => {
     const res = await request(app)
       .post('/api/library')
@@ -105,6 +106,7 @@ describe('PUT /api/library/:id', () => {
     expect(res.body.status).toBe('playing');
   });
 
+  // CT-08b
   it('retorna 404 quando UserGame não pertence ao usuário', async () => {
     vi.mocked(prisma.userGame.findFirst).mockResolvedValue(null);
 

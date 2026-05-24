@@ -54,4 +54,14 @@ router.put('/me', async (req: AuthRequest, res: Response): Promise<void> => {
   }
 });
 
+// UC18 - Excluir conta (cascata configurada no schema cuida das relações)
+router.delete('/me', async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    await prisma.user.delete({ where: { id: req.userId! } });
+    res.status(204).send();
+  } catch {
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 export default router;

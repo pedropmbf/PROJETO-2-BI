@@ -13,6 +13,8 @@ export default function ForumPostPage() {
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingContent, setEditingContent] = useState('');
 
   useEffect(() => {
     api.get(`/api/forum/${id}`).then(({ data }) => setPost(data)).catch(() => setError('Post não encontrado')).finally(() => setLoading(false));
@@ -49,6 +51,31 @@ export default function ForumPostPage() {
     }
   };
 
+  const startEditComment = (commentId: number, currentContent: string) => {
+    setEditingCommentId(commentId);
+    setEditingContent(currentContent);
+    setError('');
+  };
+
+  const cancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditingContent('');
+  };
+
+  const saveEditComment = async (commentId: number) => {
+    if (!editingContent.trim()) return;
+    try {
+      const { data } = await api.put(`/api/forum/comments/${commentId}`, { content: editingContent });
+      setPost((prev) => prev ? {
+        ...prev,
+        comments: prev.comments?.map((c) => c.id === commentId ? { ...c, content: data.content } : c),
+      } : prev);
+      cancelEditComment();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro ao editar comentário');
+    }
+  };
+
   if (loading) return <p style={{ color: '#aaa', padding: '24px' }}>Carregando...</p>;
   if (!post) return <p style={{ color: '#e94560', padding: '24px' }}>{error || 'Post não encontrado'}</p>;
 
@@ -79,18 +106,39 @@ export default function ForumPostPage() {
         )}
 
         <div style={styles.commentsList}>
-          {post.comments?.map((c) => (
-            <div key={c.id} style={styles.comment}>
-              <div style={styles.commentHeader}>
-                <strong style={styles.commentAuthor}>{c.user.username}</strong>
-                <span style={styles.commentDate}>{new Date(c.createdAt).toLocaleDateString('pt-BR')}</span>
-                {user?.username === c.user.username && (
-                  <button style={styles.deleteCommentBtn} onClick={() => deleteComment(c.id)}>×</button>
+          {post.comments?.map((c) => {
+            const isOwn = user?.username === c.user.username;
+            const isEditing = editingCommentId === c.id;
+            return (
+              <div key={c.id} style={styles.comment}>
+                <div style={styles.commentHeader}>
+                  <strong style={styles.commentAuthor}>{c.user.username}</strong>
+                  <span style={styles.commentDate}>{new Date(c.createdAt).toLocaleDateString('pt-BR')}</span>
+                  {isOwn && !isEditing && (
+                    <>
+                      <button style={styles.editCommentBtn} onClick={() => startEditComment(c.id, c.content)}>Editar</button>
+                      <button style={styles.deleteCommentBtn} onClick={() => deleteComment(c.id)}>×</button>
+                    </>
+                  )}
+                </div>
+                {isEditing ? (
+                  <div style={styles.editCommentForm}>
+                    <textarea
+                      style={styles.textarea}
+                      value={editingContent}
+                      onChange={(e) => setEditingContent(e.target.value)}
+                    />
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <button type="button" style={styles.editCommentBtn} onClick={cancelEditComment}>Cancelar</button>
+                      <button type="button" style={styles.btn} onClick={() => saveEditComment(c.id)}>Salvar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <p style={styles.commentContent}>{c.content}</p>
                 )}
               </div>
-              <p style={styles.commentContent}>{c.content}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
@@ -117,6 +165,8 @@ const styles: Record<string, React.CSSProperties> = {
   commentHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' },
   commentAuthor: { color: '#3498db' },
   commentDate: { color: '#666', fontSize: '0.8rem' },
-  deleteCommentBtn: { marginLeft: 'auto', background: 'transparent', border: 'none', color: '#e94560', cursor: 'pointer', fontSize: '1.2rem' },
+  deleteCommentBtn: { background: 'transparent', border: 'none', color: '#e94560', cursor: 'pointer', fontSize: '1.2rem' },
+  editCommentBtn: { marginLeft: 'auto', background: 'transparent', border: '1px solid #3498db', color: '#3498db', borderRadius: '4px', padding: '2px 8px', cursor: 'pointer', fontSize: '0.75rem' },
+  editCommentForm: { display: 'flex', flexDirection: 'column', gap: '8px' },
   commentContent: { color: '#ccc', margin: 0, fontSize: '0.9rem' },
 };

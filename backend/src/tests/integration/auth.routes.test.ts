@@ -73,6 +73,7 @@ describe('POST /api/auth/register', () => {
     expect(res.body.error).toBe('Email ou username já em uso');
   });
 
+  // CT-01b
   it('retorna 400 quando campos obrigatórios estão ausentes', async () => {
     const res = await request(app).post('/api/auth/register').send({ email: 'x@x.com' });
 
@@ -110,6 +111,7 @@ describe('POST /api/auth/login', () => {
     expect(res.body.error).toBe('Credenciais inválidas');
   });
 
+  // CT-04b
   it('retorna 401 quando usuário não existe', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 

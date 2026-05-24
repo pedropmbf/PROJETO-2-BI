@@ -136,6 +136,33 @@ router.post('/:id/comments', async (req: AuthRequest, res: Response): Promise<vo
   }
 });
 
+// UC15 - Editar comentário próprio
+router.put('/comments/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    if (!content?.trim()) {
+      res.status(400).json({ error: 'content é obrigatório' });
+      return;
+    }
+    const comment = await prisma.postComment.findFirst({
+      where: { id: Number(id), userId: req.userId! },
+    });
+    if (!comment) {
+      res.status(404).json({ error: 'Comentário não encontrado' });
+      return;
+    }
+    const updated = await prisma.postComment.update({
+      where: { id: Number(id) },
+      data: { content },
+      include: { user: { select: { username: true, avatarUrl: true } } },
+    });
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // UC16 - Excluir comentário
 router.delete('/comments/:id', async (req: AuthRequest, res: Response): Promise<void> => {
   try {

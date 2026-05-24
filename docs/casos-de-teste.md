@@ -277,15 +277,15 @@
 | Campo              | Valor |
 |--------------------|-------|
 | **ID**             | CT-16 |
-| **Caso de Uso**    | UC01, UC04, UC06, UC07 |
+| **Caso de Uso**    | UC01, UC04, UC06, UC07, UC26 |
 | **Objetivo**       | Verificar o fluxo completo de onboarding do usuário |
 | **Tipo**           | E2E (Playwright) |
-| **Pré-condições**  | Sistema rodando, banco limpo |
-| **Dados de Entrada** | Usuário novo: username "e2euser", email "e2e@test.com", senha "teste123" |
-| **Passos**         | 1. Acessa `/register` e cria conta; 2. É redirecionado para `/explore`; 3. Busca "Zelda"; 4. Clica em "+ Biblioteca"; 5. Acessa `/library`; 6. Verifica que o jogo aparece com status "backlog"; 7. Muda status para "playing" |
-| **Resultado Esperado** | Todos os passos executados sem erros, status atualizado visível na tela |
-| **Resultado Obtido** | *Pendente — previsto para Sprint 3* |
-| **Status**         | Pendente |
+| **Pré-condições**  | Backend rodando em :3000, frontend em :5173, banco acessível, RAWG_API_KEY configurada |
+| **Dados de Entrada** | Usuário novo com email/username timestampados (`e2e_${Date.now()}`) e senha "senha123" |
+| **Passos**         | 1. Acessa `/register` e cria conta; 2. É redirecionado para `/explore`; 3. Busca "zelda"; 4. Clica em "+ Biblioteca" no primeiro resultado; 5. Acessa `/library`; 6. Valida que o select de status mostra "backlog"; 7. Muda para "playing"; 8. Reload e valida persistência; 9. Cleanup via `DELETE /api/users/me` (UC26) |
+| **Resultado Esperado** | Todos os passos passam; usuário criado, jogo adicionado, status atualizado e persistido; cleanup com 204 |
+| **Resultado Obtido** | Spec implementado em `e2e/tests/ct16-onboarding.spec.ts`. Execução via `npx playwright test`. Relatório HTML em `playwright-report/index.html`. |
+| **Status**         | Aprovado |
 
 ---
 
@@ -294,14 +294,15 @@
 | Campo              | Valor |
 |--------------------|-------|
 | **ID**             | CT-17 |
-| **Caso de Uso**    | UC12, UC15 |
+| **Caso de Uso**    | UC01, UC12, UC15, UC26 |
 | **Objetivo**       | Verificar fluxo completo de interação no fórum |
 | **Tipo**           | E2E (Playwright) |
-| **Pré-condições**  | Usuário autenticado |
-| **Passos**         | 1. Acessa `/forum`; 2. Cria post; 3. Clica no post; 4. Adiciona comentário; 5. Verifica que comentário aparece |
-| **Resultado Esperado** | Post e comentário visíveis sem reload completo |
-| **Resultado Obtido** | *Pendente — previsto para Sprint 3* |
-| **Status**         | Pendente |
+| **Pré-condições**  | Backend rodando em :3000, frontend em :5173, banco acessível |
+| **Dados de Entrada** | Usuário novo timestampado; post com título "Post E2E {timestamp}"; comentário "Comentário E2E {timestamp}" |
+| **Passos**         | 1. Registra novo usuário; 2. Acessa `/forum`; 3. Clica "+ Novo Post"; 4. Preenche título e conteúdo, publica; 5. Verifica post na lista; 6. Abre o post; 7. Comenta; 8. Valida que aparece sem reload e que o contador vai para "Comentários (1)"; 9. Cleanup via `DELETE /api/users/me` (UC26) |
+| **Resultado Esperado** | Post e comentário visíveis sem reload completo; cleanup com 204 |
+| **Resultado Obtido** | Spec implementado em `e2e/tests/ct17-forum.spec.ts`. Execução via `npx playwright test`. Relatório HTML em `playwright-report/index.html`. |
+| **Status**         | Aprovado |
 
 ---
 
@@ -351,5 +352,56 @@
 | **Dados de Entrada** | `{ title: "Meu Quiz", questions: [ {P1}, {P2} ] }` + Bearer token |
 | **Passos**         | 1. POST `/api/quizzes` com apenas 2 perguntas |
 | **Resultado Esperado** | HTTP 400, `{ "error": "O quiz precisa de pelo menos 3 perguntas" }` |
-| **Resultado Obtido** | HTTP 400, `{ "error": "O quiz precisa de pelo menos 3 perguntas" }`. Teste automatizado passou. |
+| **Resultado Obtido** | HTTP 400, `{ "error": "O quiz precisa de pelo menos 3 perguntas" }`. Teste automatizado passou (assertion corrigida de `.toContain` para `.toBe` exato). |
+| **Status**         | Aprovado |
+
+---
+
+## CT-21 — Editar quiz próprio
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-21 |
+| **Caso de Uso**    | UC22  |
+| **Objetivo**       | Verificar atualização de quiz próprio com substituição de perguntas em transação |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Quiz criado pelo usuário autenticado (não oficial) |
+| **Dados de Entrada** | PUT `/api/quizzes/:id` com `{ title: "Quiz Editado", questions: [...3+ perguntas válidas] }` + Bearer token do dono |
+| **Passos**         | 1. PUT na rota com payload válido; 2. Em paralelo: tentar editar quiz oficial → 403; 3. Tentar editar quiz de outro usuário → 403 |
+| **Resultado Esperado** | HTTP 200 com quiz atualizado; HTTP 403 para oficial; HTTP 403 para não-dono; HTTP 404 para id inexistente |
+| **Resultado Obtido** | HTTP 200 com `title: "Quiz Editado"`; 403 oficial `"Quizzes oficiais não podem ser editados"`; 403 não-dono `"Sem permissão"`; 404 inexistente. 4 testes automatizados passaram. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-22 — Editar comentário próprio
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-22 |
+| **Caso de Uso**    | UC15  |
+| **Objetivo**       | Verificar atualização de comentário próprio em post do fórum |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Comentário criado pelo usuário autenticado |
+| **Dados de Entrada** | PUT `/api/forum/comments/:id` com `{ content: "Comentário editado" }` + Bearer token |
+| **Passos**         | 1. PUT com content válido; 2. PUT com content vazio; 3. PUT em comentário de outro usuário; 4. PUT sem token |
+| **Resultado Esperado** | HTTP 200 com comentário atualizado; 400 com content vazio; 404 para comentário alheio; 401 sem token |
+| **Resultado Obtido** | HTTP 200 `{ content: "Comentário editado" }`; 400 conteúdo vazio; 404 `"Comentário não encontrado"`; 401 sem token. 4 testes automatizados passaram. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-23 — Excluir conta do usuário
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-23 |
+| **Caso de Uso**    | UC18  |
+| **Objetivo**       | Verificar exclusão de conta com cascade nas entidades relacionadas |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Usuário autenticado existente |
+| **Dados de Entrada** | DELETE `/api/users/me` + Bearer token |
+| **Passos**         | 1. DELETE na rota com token; 2. DELETE sem token |
+| **Resultado Esperado** | HTTP 204 sem body; cascades configurados no schema removem userGames/reviews/posts/comments/quizzes/quizResults. HTTP 401 sem token. |
+| **Resultado Obtido** | HTTP 204 sem body; `prisma.user.delete` chamado com `{ where: { id: USER_ID } }`. HTTP 401 sem token. 2 testes automatizados passaram. |
 | **Status**         | Aprovado |

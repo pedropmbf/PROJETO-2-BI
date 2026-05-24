@@ -14,7 +14,7 @@ interface Quiz {
 }
 
 export default function QuizListPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +24,16 @@ export default function QuizListPage() {
       .then(({ data }) => setQuizzes(data))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleDelete = async (quizId: number) => {
+    if (!confirm('Excluir este quiz? Esta ação não pode ser desfeita.')) return;
+    try {
+      await api.delete(`/api/quizzes/${quizId}`);
+      setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Erro ao excluir quiz');
+    }
+  };
 
   const official = quizzes.filter((q) => q.isOfficial);
   const community = quizzes.filter((q) => !q.isOfficial);
@@ -52,7 +62,7 @@ export default function QuizListPage() {
             </h2>
             <div style={styles.grid}>
               {official.map((quiz) => (
-                <QuizCard key={quiz.id} quiz={quiz} />
+                <QuizCard key={quiz.id} quiz={quiz} currentUsername={user?.username} onDelete={handleDelete} />
               ))}
             </div>
           </section>
@@ -62,7 +72,7 @@ export default function QuizListPage() {
               <h2 style={styles.sectionTitle}>Da Comunidade</h2>
               <div style={styles.grid}>
                 {community.map((quiz) => (
-                  <QuizCard key={quiz.id} quiz={quiz} />
+                  <QuizCard key={quiz.id} quiz={quiz} currentUsername={user?.username} onDelete={handleDelete} />
                 ))}
               </div>
             </section>
@@ -83,7 +93,8 @@ export default function QuizListPage() {
   );
 }
 
-function QuizCard({ quiz }: { quiz: Quiz }) {
+function QuizCard({ quiz, currentUsername, onDelete }: { quiz: Quiz; currentUsername?: string; onDelete: (id: number) => void }) {
+  const isOwner = !quiz.isOfficial && currentUsername === quiz.createdBy.username;
   return (
     <div style={styles.card}>
       {quiz.coverImage ? (
@@ -105,6 +116,12 @@ function QuizCard({ quiz }: { quiz: Quiz }) {
           <Link to={`/quiz/${quiz.id}/play`} style={styles.playBtn}>Jogar</Link>
           <Link to={`/quiz/${quiz.id}/ranking`} style={styles.rankBtn}>Ranking</Link>
         </div>
+        {isOwner && (
+          <div style={styles.ownerActions}>
+            <Link to={`/quiz/${quiz.id}/editar`} style={styles.editBtn}>Editar</Link>
+            <button type="button" style={styles.deleteBtn} onClick={() => onDelete(quiz.id)}>Excluir</button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -134,4 +151,7 @@ const styles: Record<string, React.CSSProperties> = {
   rankBtn: { padding: '10px 14px', background: '#0f3460', color: '#aaa', borderRadius: '4px', textDecoration: 'none', textAlign: 'center', fontSize: '0.9rem' },
   emptyBox: { marginTop: '24px', background: '#16213e', padding: '32px', borderRadius: '8px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' },
   loginLink: { color: '#e94560', textDecoration: 'none' },
+  ownerActions: { display: 'flex', gap: '8px', marginTop: '4px' },
+  editBtn: { flex: 1, padding: '8px', background: 'transparent', color: '#3498db', border: '1px solid #3498db', borderRadius: '4px', textDecoration: 'none', textAlign: 'center', fontSize: '0.85rem' },
+  deleteBtn: { flex: 1, padding: '8px', background: 'transparent', color: '#e94560', border: '1px solid #e94560', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' },
 };

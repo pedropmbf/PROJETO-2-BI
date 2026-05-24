@@ -115,10 +115,16 @@ gamelog/
 │   │   ├── services/           # Cliente Axios (api.ts)
 │   │   └── types/              # Tipos TypeScript compartilhados
 │   └── .env.example
+├── e2e/
+│   ├── playwright.config.ts    # Configuração Playwright
+│   ├── tests/
+│   │   ├── ct16-onboarding.spec.ts
+│   │   └── ct17-forum.spec.ts
+│   └── README.md
 └── docs/
     ├── escopo.md               # Tema, stack e justificativas
-    ├── casos-de-uso.md         # 18 casos de uso documentados
-    └── casos-de-teste.md       # 17 casos de teste (preenchidos na Sprint 2/3)
+    ├── casos-de-uso.md         # 26 casos de uso documentados
+    └── casos-de-teste.md       # 23 casos de teste (todos Aprovados na Sprint 3)
 ```
 
 ## Rotas da API
@@ -135,6 +141,7 @@ gamelog/
 | PUT    | /api/library/:id              | Sim  | Atualizar status do jogo           |
 | DELETE | /api/library/:id              | Sim  | Remover jogo da biblioteca         |
 | GET    | /api/reviews/game/:rawgId     | Não  | Avaliações de um jogo              |
+| GET    | /api/reviews/mine             | Sim  | Listar minhas avaliações           |
 | POST   | /api/reviews                  | Sim  | Criar avaliação                    |
 | PUT    | /api/reviews/:id              | Sim  | Editar avaliação                   |
 | DELETE | /api/reviews/:id              | Sim  | Excluir avaliação                  |
@@ -144,10 +151,20 @@ gamelog/
 | PUT    | /api/forum/:id                | Sim  | Editar post                        |
 | DELETE | /api/forum/:id                | Sim  | Excluir post                       |
 | POST   | /api/forum/:id/comments       | Sim  | Comentar em post                   |
+| PUT    | /api/forum/comments/:id       | Sim  | Editar comentário próprio          |
 | DELETE | /api/forum/comments/:id       | Sim  | Excluir comentário                 |
 | GET    | /api/ranking                  | Não  | Ranking de jogadores               |
 | GET    | /api/users/me                 | Sim  | Ver meu perfil                     |
 | PUT    | /api/users/me                 | Sim  | Atualizar meu perfil               |
+| DELETE | /api/users/me                 | Sim  | Excluir minha conta (cascade)      |
+| GET    | /api/quizzes                  | Não  | Listar quizzes (oficiais + comunidade) |
+| GET    | /api/quizzes/:id              | Não  | Detalhes do quiz (sem correctIndex) |
+| GET    | /api/quizzes/:id/edit         | Sim  | Quiz completo para edição (dono only) |
+| GET    | /api/quizzes/:id/ranking      | Não  | Ranking de um quiz                 |
+| POST   | /api/quizzes                  | Sim  | Criar quiz personalizado           |
+| PUT    | /api/quizzes/:id              | Sim  | Editar quiz próprio                |
+| DELETE | /api/quizzes/:id              | Sim  | Excluir quiz próprio               |
+| POST   | /api/quizzes/:id/submit       | Sim  | Submeter respostas (upsert score)  |
 
 ## Comandos Úteis
 
@@ -165,11 +182,71 @@ npm run build        # Build de produção
 npm run preview      # Preview do build
 ```
 
+## Testes e Qualidade
+
+O projeto adota a estratégia exigida pela rubric: testes nos três níveis (unitário, integração, E2E), cobertura ≥ 70% e análise estática.
+
+### Stack de testes
+
+| Nível | Ferramenta | Local |
+|---|---|---|
+| Unitário | Vitest | `backend/src/tests/unit/` |
+| Integração | Vitest + Supertest (mocks de Prisma e axios) | `backend/src/tests/integration/` |
+| E2E | Playwright (Chromium) | `e2e/tests/` |
+| Análise estática | ESLint + plugin `sonarjs` (complexidade, code smells, duplicação, vulnerabilidades) | `backend/eslint.config.mjs` + `frontend/eslint.config.js` |
+
+### Executar a suíte completa
+
+```bash
+# 1) Unitários + Integração + Cobertura (backend)
+cd backend
+npm run test:coverage
+# Gera: coverage/index.html, coverage/lcov.info, test-report/index.html, test-report/results.json
+# Meta: lines >= 70% (atualmente ~79%)
+
+# 2) E2E (com backend e frontend rodando em outros terminais)
+cd backend && npm run dev          # terminal 1
+cd frontend && npm run dev         # terminal 2
+cd e2e
+npm install
+npx playwright install --with-deps chromium    # primeira vez
+npx playwright test                            # roda CT-16 e CT-17
+npx playwright show-report ../playwright-report
+
+# 3) Análise estática (ESLint + sonarjs) — gera relatório HTML local
+cd backend
+npm run lint           # mostra issues no terminal
+npm run lint:report    # gera backend/eslint-report.html
+```
+
+### Relatórios gerados
+
+| Relatório | Caminho | Conteúdo |
+|---|---|---|
+| Vitest HTML | `backend/test-report/index.html` | Cada describe/it com tempo e status |
+| Vitest JSON | `backend/test-report/results.json` | Resultado serializado (CI) |
+| Coverage v8 HTML | `backend/coverage/index.html` | Coloração linha-a-linha por arquivo |
+| Playwright HTML | `playwright-report/index.html` | Vídeo/screenshot/trace por teste |
+| ESLint HTML | `backend/eslint-report.html` | Code smells, complexidade, duplicação (regras `sonarjs`) |
+
+### Cobertura atual (após sprint 3)
+
+```
+File              | % Stmts | % Branch | % Funcs | % Lines |
+------------------|---------|----------|---------|---------|
+All files         |   76.23 |    75.34 |   85.10 |   78.94 |
+ routes           |   74.59 |    70.83 |   82.92 |   77.44 |
+ utils            |   95.00 |    95.45 |  100.00 |  100.00 |
+```
+
+89 testes verdes em 10 arquivos (18 unitários + 71 integração) + 2 specs E2E.
+
 ## Documentação
 
 - [Escopo e Stack](docs/escopo.md)
-- [Casos de Uso](docs/casos-de-uso.md) — 18 casos de uso completos
-- [Casos de Teste](docs/casos-de-teste.md) — 17 casos de teste
+- [Casos de Uso](docs/casos-de-uso.md) — **26 casos de uso** completos (UC01–UC26)
+- [Casos de Teste](docs/casos-de-teste.md) — **23 casos de teste** (CT-01–CT-23) com 100% aprovação
+- [E2E (Playwright) README](e2e/README.md) — instruções para reproduzir CT-16 e CT-17
 
 ## Equipe
 

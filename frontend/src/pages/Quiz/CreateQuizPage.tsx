@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
 
 interface QuestionForm {
@@ -8,19 +8,44 @@ interface QuestionForm {
   correctIndex: number;
 }
 
+interface Props {
+  mode?: 'create' | 'edit';
+}
+
 const emptyQuestion = (): QuestionForm => ({
   text: '',
   options: ['', '', '', ''],
   correctIndex: 0,
 });
 
-export default function CreateQuizPage() {
+export default function CreateQuizPage({ mode = 'create' }: Props) {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEdit = mode === 'edit';
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [questions, setQuestions] = useState<QuestionForm[]>([emptyQuestion()]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingQuiz, setLoadingQuiz] = useState(isEdit);
+
+  useEffect(() => {
+    if (!isEdit || !id) return;
+    api.get(`/api/quizzes/${id}/edit`)
+      .then(({ data }) => {
+        setTitle(data.title);
+        setDescription(data.description || '');
+        setQuestions(
+          (data.questions || []).map((q: any) => ({
+            text: q.text,
+            options: [...q.options] as [string, string, string, string],
+            correctIndex: q.correctIndex ?? 0,
+          }))
+        );
+      })
+      .catch(() => setError('Erro ao carregar quiz'))
+      .finally(() => setLoadingQuiz(false));
+  }, [id, isEdit]);
 
   const updateQuestion = (qi: number, field: keyof QuestionForm, value: string | number) => {
     setQuestions((prev) =>
@@ -65,18 +90,25 @@ export default function CreateQuizPage() {
 
     setLoading(true);
     try {
-      const { data } = await api.post('/api/quizzes', { title, description, questions });
-      navigate(`/quiz/${data.id}/play`);
+      if (isEdit && id) {
+        await api.put(`/api/quizzes/${id}`, { title, description, questions });
+        navigate(`/quiz/${id}/play`);
+      } else {
+        const { data } = await api.post('/api/quizzes', { title, description, questions });
+        navigate(`/quiz/${data.id}/play`);
+      }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao criar quiz');
+      setError(err.response?.data?.error || `Erro ao ${isEdit ? 'atualizar' : 'criar'} quiz`);
     } finally {
       setLoading(false);
     }
   };
 
+  if (loadingQuiz) return <p style={{ color: '#aaa', padding: '24px' }}>Carregando quiz...</p>;
+
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>Criar Quiz</h1>
+      <h1 style={styles.title}>{isEdit ? 'Editar Quiz' : 'Criar Quiz'}</h1>
 
       <div style={styles.section}>
         <label style={styles.label}>Título do Quiz *</label>
@@ -155,7 +187,9 @@ export default function CreateQuizPage() {
           Cancelar
         </button>
         <button style={styles.submitBtn} onClick={handleSubmit} disabled={loading} type="button">
-          {loading ? 'Criando...' : 'Criar Quiz'}
+          {loading
+            ? (isEdit ? 'Salvando...' : 'Criando...')
+            : (isEdit ? 'Salvar alterações' : 'Criar Quiz')}
         </button>
       </div>
     </div>

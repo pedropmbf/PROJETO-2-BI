@@ -434,3 +434,72 @@ Cada caso de uso segue o padrão: **Ator, Pré-condições, Fluxo Principal, Flu
 - 3a. Usuário cancela → nenhuma alteração
 
 **Pós-condições:** Quiz e todos os dados associados excluídos.
+
+---
+
+## UC24 — Editar Quiz Próprio
+
+**Ator:** Autenticado
+**Pré-condições:** Usuário é o criador do quiz. Quiz não é oficial.
+
+**Fluxo Principal:**
+1. O usuário acessa a lista de quizzes em `/quiz`
+2. Clica em "Editar" no card do seu quiz
+3. O sistema carrega `/quiz/:id/editar` chamando `GET /api/quizzes/:id/edit` (endpoint autenticado que devolve perguntas com `correctIndex`)
+4. O usuário altera título, descrição e/ou perguntas (adiciona, remove, edita texto, marca outra alternativa correta)
+5. Clica em "Salvar alterações"
+6. O sistema valida os dados e envia `PUT /api/quizzes/:id`
+7. O backend executa em transação: `prisma.question.deleteMany` + `prisma.quiz.update` recriando as perguntas
+8. O usuário é redirecionado para a tela de jogar o quiz atualizado
+
+**Fluxos Alternativos:**
+- 3a. Quiz é oficial → API retorna 403 "Quizzes oficiais não podem ser editados"
+- 3b. Usuário não é o dono → API retorna 403 "Sem permissão"
+- 6a. Título vazio → exibe "Título é obrigatório"
+- 6b. Menos de 3 perguntas → exibe "O quiz precisa de pelo menos 3 perguntas"
+
+**Pós-condições:** Quiz e perguntas atualizados em transação (sem janela de inconsistência).
+
+---
+
+## UC25 — Editar Comentário Próprio
+
+**Ator:** Autenticado
+**Pré-condições:** Usuário é o autor do comentário em um post existente.
+
+**Fluxo Principal:**
+1. O usuário abre o post em `/forum/:id`
+2. Localiza seu comentário e clica em "Editar"
+3. O comentário entra em modo edição inline com `<textarea>` controlado
+4. Altera o conteúdo e clica em "Salvar"
+5. O sistema envia `PUT /api/forum/comments/:id`
+6. O comentário é atualizado localmente sem reload
+
+**Fluxos Alternativos:**
+- 4a. Conteúdo vazio → exibe erro "content é obrigatório"
+- 5a. Comentário não pertence ao usuário → API retorna 404
+- Cancelar → modo edição fechado sem alterações
+
+**Pós-condições:** Comentário atualizado no banco de dados.
+
+---
+
+## UC26 — Excluir Conta
+
+**Ator:** Autenticado
+**Pré-condições:** Usuário está logado.
+
+**Fluxo Principal:**
+1. O usuário acessa `/profile`
+2. Na seção "Zona de Perigo" clica em "Excluir minha conta"
+3. O sistema abre um `prompt()` pedindo confirmação textual ("EXCLUIR")
+4. O usuário digita "EXCLUIR" e confirma
+5. O sistema envia `DELETE /api/users/me`
+6. O backend executa `prisma.user.delete()`; cascades configurados no schema removem automaticamente UserGame, Review, ForumPost, PostComment, Quiz e UserQuizResult
+7. O cliente limpa `localStorage` e redireciona para `/login`
+
+**Fluxos Alternativos:**
+- 3a. Usuário cancela ou digita algo diferente de "EXCLUIR" → operação abortada, nenhuma alteração
+- 5a. Erro interno → exibe "Erro ao excluir conta"
+
+**Pós-condições:** Conta e todas as entidades relacionadas excluídas; sessão encerrada.

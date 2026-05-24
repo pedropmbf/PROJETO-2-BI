@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
+import { validateQuizInput } from '../utils/quiz.utils';
 
 const router = Router();
 
@@ -67,28 +68,28 @@ router.get('/:id/ranking', async (req: Request, res: Response): Promise<void> =>
 
 router.use(authenticate);
 
+// UC22 - Buscar quiz para edição (inclui correctIndex; só dono pode acessar)
+router.get('/:id/edit', async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: Number(req.params.id) },
+      include: { questions: true },
+    });
+    if (!quiz) { res.status(404).json({ error: 'Quiz não encontrado' }); return; }
+    if (quiz.isOfficial) { res.status(403).json({ error: 'Quizzes oficiais não podem ser editados' }); return; }
+    if (quiz.createdById !== req.userId!) { res.status(403).json({ error: 'Sem permissão' }); return; }
+    res.json(quiz);
+  } catch {
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // UC22 - Criar quiz personalizado
 router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { title, description, coverImage, questions } = req.body;
-    if (!title?.trim()) { res.status(400).json({ error: 'Título é obrigatório' }); return; }
-    if (!questions || questions.length < 3) {
-      res.status(400).json({ error: 'O quiz precisa de pelo menos 3 perguntas' });
-      return;
-    }
-
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
-      if (!q.text?.trim()) { res.status(400).json({ error: `Pergunta ${i + 1}: texto obrigatório` }); return; }
-      if (!q.options || q.options.length !== 4 || q.options.some((o: string) => !o?.trim())) {
-        res.status(400).json({ error: `Pergunta ${i + 1}: preencha todas as 4 alternativas` });
-        return;
-      }
-      if (q.correctIndex < 0 || q.correctIndex > 3) {
-        res.status(400).json({ error: `Pergunta ${i + 1}: marque a alternativa correta` });
-        return;
-      }
-    }
+    const validationError = validateQuizInput(title, questions);
+    if (validationError) { res.status(400).json({ error: validationError }); return; }
 
     const quiz = await prisma.quiz.create({
       data: {
@@ -101,6 +102,39 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       include: { _count: { select: { questions: true } } },
     });
     res.status(201).json(quiz);
+  } catch {
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// UC22 - Editar quiz próprio (replace de perguntas em transação)
+router.put('/:id', async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const quizId = Number(req.params.id);
+    const existing = await prisma.quiz.findUnique({ where: { id: quizId } });
+    if (!existing) { res.status(404).json({ error: 'Quiz não encontrado' }); return; }
+    if (existing.isOfficial) { res.status(403).json({ error: 'Quizzes oficiais não podem ser editados' }); return; }
+    if (existing.createdById !== req.userId!) { res.status(403).json({ error: 'Sem permissão' }); return; }
+
+    const { title, description, coverImage, questions } = req.body;
+    const validationError = validateQuizInput(title, questions);
+    if (validationError) { res.status(400).json({ error: validationError }); return; }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.question.deleteMany({ where: { quizId } });
+      return tx.quiz.update({
+        where: { id: quizId },
+        data: {
+          title,
+          description,
+          coverImage,
+          questions: { create: questions },
+        },
+        include: { _count: { select: { questions: true } } },
+      });
+    });
+
+    res.json(updated);
   } catch {
     res.status(500).json({ error: 'Erro interno do servidor' });
   }

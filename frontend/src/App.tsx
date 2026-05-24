@@ -38,6 +38,7 @@ function AppRoutes() {
         <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
         <Route path="/quiz" element={<QuizListPage />} />
         <Route path="/quiz/criar" element={<PrivateRoute><CreateQuizPage /></PrivateRoute>} />
+        <Route path="/quiz/:id/editar" element={<PrivateRoute><CreateQuizPage mode="edit" /></PrivateRoute>} />
         <Route path="/quiz/:id/play" element={<QuizPlayPage />} />
         <Route path="/quiz/:id/resultado" element={<QuizResultPage />} />
         <Route path="/quiz/:id/ranking" element={<QuizRankingPage />} />

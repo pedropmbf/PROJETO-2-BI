@@ -50,7 +50,7 @@ ForumPost    → post no fórum (vinculado opcionalmente a um jogo)
 PostComment  → comentário em um post do fórum
 ```
 
-## Telas (5 com CRUD)
+## Telas (6 com CRUD)
 
 | Tela               | Entidade    | Operações CRUD                  |
 |--------------------|-------------|---------------------------------|
@@ -58,6 +58,7 @@ PostComment  → comentário em um post do fórum
 | Explorar + Biblioteca | UserGame | Create, Read, Update, Delete   |
 | Avaliações         | Review      | Create, Read, Update, Delete    |
 | Fórum              | ForumPost + PostComment | Create, Read, Update, Delete |
-| Perfil             | User        | Read, Update                    |
+| Perfil             | User        | Read, Update, Delete (excluir conta com cascade) |
+| Quiz               | Quiz + Question | Create, Read, Update (replace transacional de perguntas), Delete |
 
 Tela de Ranking: derivada (leitura agregada de UserGame, sem CRUD próprio).
