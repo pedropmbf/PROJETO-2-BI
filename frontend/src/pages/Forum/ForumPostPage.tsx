@@ -15,6 +15,9 @@ export default function ForumPostPage() {
   const [error, setError] = useState('');
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState('');
+  const [editingPost, setEditingPost] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
 
   useEffect(() => {
     api.get(`/api/forum/${id}`).then(({ data }) => setPost(data)).catch(() => setError('Post não encontrado')).finally(() => setLoading(false));
@@ -39,6 +42,34 @@ export default function ForumPostPage() {
       navigate('/forum');
     } catch {
       setError('Erro ao excluir post');
+    }
+  };
+
+  const startEditPost = () => {
+    if (!post) return;
+    setEditTitle(post.title);
+    setEditContent(post.content);
+    setEditingPost(true);
+    setError('');
+  };
+
+  const cancelEditPost = () => {
+    setEditingPost(false);
+    setEditTitle('');
+    setEditContent('');
+  };
+
+  const saveEditPost = async () => {
+    if (!editTitle.trim() || !editContent.trim()) {
+      setError('Título e conteúdo são obrigatórios');
+      return;
+    }
+    try {
+      const { data } = await api.put(`/api/forum/${id}`, { title: editTitle, content: editContent });
+      setPost((prev) => prev ? { ...prev, title: data.title, content: data.content } : prev);
+      cancelEditPost();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Erro ao editar post');
     }
   };
 
@@ -83,14 +114,42 @@ export default function ForumPostPage() {
     <div style={styles.container}>
       <div style={styles.post}>
         <div style={styles.postHeader}>
-          <h1 style={styles.title}>{post.title}</h1>
-          {user?.username === post.user.username && (
-            <button style={styles.deleteBtn} onClick={deletePost}>Excluir Post</button>
+          {editingPost ? (
+            <input
+              style={styles.editTitleInput}
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="Título"
+            />
+          ) : (
+            <h1 style={styles.title}>{post.title}</h1>
+          )}
+          {user?.username === post.user.username && !editingPost && (
+            <div style={styles.postActions}>
+              <button style={styles.editBtn} onClick={startEditPost}>Editar</button>
+              <button style={styles.deleteBtn} onClick={deletePost}>Excluir Post</button>
+            </div>
           )}
         </div>
         <p style={styles.meta}>por <strong>{post.user.username}</strong> · {new Date(post.createdAt).toLocaleDateString('pt-BR')}</p>
         {post.game && <span style={styles.gameBadge}>{post.game.title}</span>}
-        <p style={styles.content}>{post.content}</p>
+        {editingPost ? (
+          <div style={styles.editPostForm}>
+            <textarea
+              style={{ ...styles.textarea, minHeight: '120px' }}
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              placeholder="Conteúdo"
+            />
+            {error && <div style={styles.error}>{error}</div>}
+            <div style={styles.editPostActions}>
+              <button type="button" style={styles.editBtn} onClick={cancelEditPost}>Cancelar</button>
+              <button type="button" style={styles.btn} onClick={saveEditPost}>Salvar alterações</button>
+            </div>
+          </div>
+        ) : (
+          <p style={styles.content}>{post.content}</p>
+        )}
       </div>
 
       <div style={styles.commentsSection}>
@@ -154,6 +213,11 @@ const styles: Record<string, React.CSSProperties> = {
   gameBadge: { background: '#e94560', color: '#fff', padding: '2px 10px', borderRadius: '4px', fontSize: '0.8rem' },
   content: { color: '#ccc', marginTop: '16px', lineHeight: '1.6' },
   deleteBtn: { padding: '6px 14px', background: 'transparent', color: '#e94560', border: '1px solid #e94560', borderRadius: '4px', cursor: 'pointer' },
+  postActions: { display: 'flex', gap: '8px' },
+  editBtn: { padding: '6px 14px', background: 'transparent', color: '#3498db', border: '1px solid #3498db', borderRadius: '4px', cursor: 'pointer' },
+  editTitleInput: { flex: 1, padding: '8px 12px', fontSize: '1.4rem', background: '#0f3460', color: '#eee', border: '1px solid #333', borderRadius: '4px', marginRight: '12px' },
+  editPostForm: { display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' },
+  editPostActions: { display: 'flex', gap: '8px', justifyContent: 'flex-end' },
   commentsSection: { background: '#16213e', padding: '24px', borderRadius: '8px' },
   commentsTitle: { color: '#e94560', marginTop: 0 },
   commentForm: { display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' },
