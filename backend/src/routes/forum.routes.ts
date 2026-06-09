@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
+import { grantAchievement } from '../utils/achievements.service';
 
 const router = Router();
 
@@ -66,6 +67,7 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       data: { userId: req.userId!, title, content, gameId },
       include: { user: { select: { username: true } } },
     });
+    await grantAchievement(req.userId!, 'FIRST_POST');
     res.status(201).json(post);
   } catch {
     res.status(500).json({ error: 'Erro interno do servidor' });

@@ -405,3 +405,224 @@
 | **Resultado Esperado** | HTTP 204 sem body; cascades configurados no schema removem userGames/reviews/posts/comments/quizzes/quizResults. HTTP 401 sem token. |
 | **Resultado Obtido** | HTTP 204 sem body; `prisma.user.delete` chamado com `{ where: { id: USER_ID } }`. HTTP 401 sem token. 2 testes automatizados passaram. |
 | **Status**         | Aprovado |
+
+---
+
+## CT-24 — Criar lista de jogos válida
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-24 |
+| **Caso de Uso**    | UC27  |
+| **Objetivo**       | Verificar criação de lista com título válido |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Usuário autenticado |
+| **Dados de Entrada** | `{ title: "Top RPGs", isPublic: true }` + Bearer token |
+| **Passos**         | 1. POST `/api/lists`; 2. POST sem título (`"   "`) → 400; 3. POST sem token → 401 |
+| **Resultado Esperado** | HTTP 201 com a lista criada; 400 título vazio; 401 sem token |
+| **Resultado Obtido** | HTTP 201 `{ title: "Top RPGs", ... }`; 400 título vazio; 401 sem token. Testes em `lists.routes.test.ts` passaram. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-25 — Editar lista de outro usuário
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-25 |
+| **Caso de Uso**    | UC28  |
+| **Objetivo**       | Verificar bloqueio de edição por quem não é dono |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Lista pertencente a outro usuário |
+| **Dados de Entrada** | PUT `/api/lists/1` com `{ title: "Nova" }` + Bearer token de usuário diferente |
+| **Passos**         | 1. PUT na rota com dono diferente do solicitante |
+| **Resultado Esperado** | HTTP 403 "Sem permissão" |
+| **Resultado Obtido** | HTTP 403. Teste em `lists.routes.test.ts` passou. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-26 — Adicionar e remover jogo da lista
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-26 |
+| **Caso de Uso**    | UC27, UC29 |
+| **Objetivo**       | Verificar inclusão de item na lista própria e exclusão da lista |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Lista pertencente ao usuário autenticado |
+| **Dados de Entrada** | POST `/api/lists/1/items` `{ rawgId: 3498, title: "GTA V" }`; DELETE `/api/lists/1` |
+| **Passos**         | 1. POST item na lista própria; 2. DELETE da lista própria |
+| **Resultado Esperado** | HTTP 201 com o item; HTTP 204 ao excluir |
+| **Resultado Obtido** | HTTP 201 `{ rawgId: 3498, ... }`; HTTP 204 na exclusão. Testes em `lists.routes.test.ts` passaram. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-27 — Listar notícias publicadas
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-27 |
+| **Caso de Uso**    | UC31  |
+| **Objetivo**       | Verificar listagem pública apenas de notícias publicadas |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Ao menos uma notícia publicada |
+| **Dados de Entrada** | GET `/api/news` |
+| **Passos**         | 1. Requisição GET sem autenticação |
+| **Resultado Esperado** | HTTP 200, array de notícias publicadas |
+| **Resultado Obtido** | HTTP 200 com 1 notícia. Teste em `news.routes.test.ts` passou. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-28 — Criar notícia sem ser admin
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-28 |
+| **Caso de Uso**    | UC32  |
+| **Objetivo**       | Verificar bloqueio de escrita para usuário comum e ausência de token |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Usuário comum autenticado (`role = USER`) |
+| **Dados de Entrada** | POST `/api/news` `{ title: "X", content: "Y" }` |
+| **Passos**         | 1. POST sem token → 401; 2. POST com token de usuário comum → 403 |
+| **Resultado Esperado** | HTTP 401 sem token; HTTP 403 "Acesso restrito a administradores" |
+| **Resultado Obtido** | HTTP 401 e HTTP 403 conforme esperado. Testes em `news.routes.test.ts` passaram. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-29 — Criar notícia como admin
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-29 |
+| **Caso de Uso**    | UC32  |
+| **Objetivo**       | Verificar criação e validação de notícia por administrador |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Usuário autenticado com `role = ADMIN` |
+| **Dados de Entrada** | `{ title: "Novidade", content: "Conteúdo", published: true }` + Bearer token admin |
+| **Passos**         | 1. POST `/api/news` válido; 2. POST com conteúdo vazio → 400 |
+| **Resultado Esperado** | HTTP 201 com a notícia; HTTP 400 conteúdo vazio |
+| **Resultado Obtido** | HTTP 201 `{ title: "Novidade" }`; HTTP 400 conteúdo vazio. Testes em `news.routes.test.ts` passaram. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-30 — Middleware requireAdmin
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-30 |
+| **Caso de Uso**    | UC36  |
+| **Objetivo**       | Verificar o controle de acesso por papel |
+| **Tipo**           | Unitário (middleware) |
+| **Pré-condições**  | Nenhuma |
+| **Dados de Entrada** | `req.userId` de usuário ADMIN, USER e inexistente |
+| **Passos**         | 1. `requireAdmin` com usuário ADMIN; 2. com usuário USER; 3. com usuário inexistente |
+| **Resultado Esperado** | ADMIN → `next()` chamado; USER → 403; inexistente → 403 |
+| **Resultado Obtido** | ADMIN chama `next()` sem `status`; USER e inexistente retornam 403. 3 testes em `admin.middleware.test.ts` passaram. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-31 — Listar e marcar conquistas do usuário
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-31 |
+| **Caso de Uso**    | UC33  |
+| **Objetivo**       | Verificar status de desbloqueio das conquistas do usuário |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Usuário autenticado com ao menos 1 conquista desbloqueada |
+| **Dados de Entrada** | GET `/api/achievements/mine` + Bearer token |
+| **Passos**         | 1. GET sem token → 401; 2. GET com token e conquista desbloqueada |
+| **Resultado Esperado** | HTTP 401 sem token; HTTP 200 com `unlocked: true` na conquista desbloqueada |
+| **Resultado Obtido** | HTTP 401 sem token; HTTP 200 com `unlocked: true`. Testes em `achievements.routes.test.ts` passaram. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-32 — Criar conquista (admin) com validação
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-32 |
+| **Caso de Uso**    | UC34  |
+| **Objetivo**       | Verificar criação e validação de conquista pelo admin |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Usuário com `role = ADMIN`; usuário comum para o caso negativo |
+| **Dados de Entrada** | `{ code: "FIRST_LIST", title: "Colecionador", description: "..." }`; código inválido `"codigo invalido"` |
+| **Passos**         | 1. POST como usuário comum → 403; 2. POST válido como admin → 201; 3. POST com código inválido → 400 |
+| **Resultado Esperado** | 403 usuário comum; 201 criação válida; 400 código inválido |
+| **Resultado Obtido** | 403, 201 e 400 conforme esperado. Testes em `achievements.routes.test.ts` passaram. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-33 — Admin lista usuários
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-33 |
+| **Caso de Uso**    | UC35  |
+| **Objetivo**       | Verificar listagem de usuários restrita ao admin |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Admin autenticado; usuário comum para o caso negativo |
+| **Dados de Entrada** | GET `/api/admin/users` |
+| **Passos**         | 1. GET sem token → 401; 2. GET como usuário comum → 403; 3. GET como admin → 200 |
+| **Resultado Esperado** | 401 sem token; 403 usuário comum; 200 com array de usuários |
+| **Resultado Obtido** | 401, 403 e 200 (1 usuário) conforme esperado. Testes em `admin.routes.test.ts` passaram. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-34 — Admin altera papel de usuário
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-34 |
+| **Caso de Uso**    | UC35  |
+| **Objetivo**       | Verificar promoção/rebaixamento e bloqueio de auto-alteração |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Admin autenticado (id 1) |
+| **Dados de Entrada** | PATCH `/api/admin/users/2/role` `{ role: "ADMIN" }`; PATCH `/api/admin/users/1/role` |
+| **Passos**         | 1. PATCH papel de outro usuário; 2. PATCH do próprio papel |
+| **Resultado Esperado** | HTTP 200 com novo papel; HTTP 400 ao tentar alterar o próprio |
+| **Resultado Obtido** | HTTP 200 `{ role: "ADMIN" }`; HTTP 400 no auto-alteração. Testes em `admin.routes.test.ts` passaram. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-35 — Admin exclui usuário
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-35 |
+| **Caso de Uso**    | UC35  |
+| **Objetivo**       | Verificar exclusão de outro usuário pelo admin (com cascade) |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Admin autenticado; usuário alvo existente (id 2) |
+| **Dados de Entrada** | DELETE `/api/admin/users/2` + Bearer token admin |
+| **Passos**         | 1. DELETE na rota |
+| **Resultado Esperado** | HTTP 204 sem body |
+| **Resultado Obtido** | HTTP 204. Teste em `admin.routes.test.ts` passou. |
+| **Status**         | Aprovado |
+
+---
+
+## CT-36 — Painel admin: estatísticas
+
+| Campo              | Valor |
+|--------------------|-------|
+| **ID**             | CT-36 |
+| **Caso de Uso**    | UC36  |
+| **Objetivo**       | Verificar retorno das contagens do painel para o admin |
+| **Tipo**           | Integração (API) |
+| **Pré-condições**  | Admin autenticado |
+| **Dados de Entrada** | GET `/api/admin/stats` |
+| **Passos**         | 1. GET com token admin |
+| **Resultado Esperado** | HTTP 200 com `{ users, quizzes, lists, news, achievements }` |
+| **Resultado Obtido** | HTTP 200 com `users: 3` (e demais contagens). Teste em `admin.routes.test.ts` passou. |
+| **Status**         | Aprovado |

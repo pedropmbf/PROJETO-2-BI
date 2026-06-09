@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import type { ForumPost } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
+import { getErrorMessage } from '../../utils/getErrorMessage';
 
 export default function ForumPage() {
   const { isAuthenticated } = useAuth();
@@ -25,6 +26,7 @@ export default function ForumPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- carregamento inicial via data fetching
   useEffect(() => { fetchPosts(); }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -34,8 +36,8 @@ export default function ForumPage() {
       await api.post('/api/forum', { title, content });
       setTitle(''); setContent(''); setShowForm(false);
       fetchPosts();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao criar post');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao criar post'));
     }
   };
 

@@ -132,3 +132,48 @@ describe('DELETE /api/library/:id', () => {
     expect(res.status).toBe(204);
   });
 });
+
+describe('GET /api/library', () => {
+  it('lista a biblioteca do usuário e retorna 200', async () => {
+    vi.mocked(prisma.userGame.findMany).mockResolvedValue([fakeUserGame] as never);
+
+    const res = await request(app)
+      .get('/api/library')
+      .set('Authorization', `Bearer ${TOKEN}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+  });
+
+  it('filtra a biblioteca por status e retorna 200', async () => {
+    vi.mocked(prisma.userGame.findMany).mockResolvedValue([{ ...fakeUserGame, status: 'playing' }] as never);
+
+    const res = await request(app)
+      .get('/api/library?status=playing')
+      .set('Authorization', `Bearer ${TOKEN}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body[0].status).toBe('playing');
+  });
+
+  it('retorna 401 sem token', async () => {
+    const res = await request(app).get('/api/library');
+    expect(res.status).toBe(401);
+  });
+});
+
+describe('POST /api/library (cria o jogo localmente)', () => {
+  it('cria o jogo quando ainda não existe na base e retorna 201', async () => {
+    vi.mocked(prisma.game.findUnique).mockResolvedValue(null as never);
+    vi.mocked(prisma.game.create).mockResolvedValue(fakeGame as never);
+    vi.mocked(prisma.userGame.create).mockResolvedValue(fakeUserGame as never);
+
+    const res = await request(app)
+      .post('/api/library')
+      .set('Authorization', `Bearer ${TOKEN}`)
+      .send({ rawgId: 5638, title: 'The Legend of Zelda', status: 'backlog' });
+
+    expect(res.status).toBe(201);
+    expect(prisma.game.create).toHaveBeenCalled();
+  });
+});

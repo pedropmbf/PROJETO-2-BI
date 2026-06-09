@@ -21,9 +21,15 @@ export default function Navbar() {
             <Link to="/reviews" style={styles.link}>Avaliações</Link>
           </>
         )}
+        <Link to="/listas" style={styles.link}>Listas</Link>
         <Link to="/forum" style={styles.link}>Fórum</Link>
         <Link to="/quiz" style={styles.link}>Quiz</Link>
+        <Link to="/noticias" style={styles.link}>Notícias</Link>
+        <Link to="/conquistas" style={styles.link}>Conquistas</Link>
         <Link to="/ranking" style={styles.link}>Ranking</Link>
+        {user?.role === 'ADMIN' && (
+          <Link to="/admin" style={{ ...styles.link, ...styles.adminLink }}>Admin</Link>
+        )}
         {isAuthenticated ? (
           <>
             <Link to="/profile" style={styles.link}>{user?.username}</Link>
@@ -52,8 +58,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '1.4rem',
     textDecoration: 'none',
   },
-  links: { display: 'flex', alignItems: 'center', gap: '16px' },
+  links: { display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' },
   link: { color: '#eee', textDecoration: 'none', fontSize: '0.95rem' },
+  adminLink: { color: '#f1c40f', fontWeight: 'bold' },
   btn: {
     background: 'transparent',
     border: '1px solid #e94560',

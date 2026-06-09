@@ -25,7 +25,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: { username, email, passwordHash },
-      select: { id: true, username: true, email: true, createdAt: true },
+      select: { id: true, username: true, email: true, role: true, createdAt: true },
     });
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET as string, {
@@ -59,7 +59,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     });
 
     res.json({
-      user: { id: user.id, username: user.username, email: user.email },
+      user: { id: user.id, username: user.username, email: user.email, role: user.role },
       token,
     });
   } catch {

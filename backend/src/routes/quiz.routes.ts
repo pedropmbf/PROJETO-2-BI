@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
 import { validateQuizInput } from '../utils/quiz.utils';
+import { grantAchievement } from '../utils/achievements.service';
 
 const router = Router();
 
@@ -101,6 +102,7 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       },
       include: { _count: { select: { questions: true } } },
     });
+    await grantAchievement(req.userId!, 'FIRST_QUIZ');
     res.status(201).json(quiz);
   } catch {
     res.status(500).json({ error: 'Erro interno do servidor' });

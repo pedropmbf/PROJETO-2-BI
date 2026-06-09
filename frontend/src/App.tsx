@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
+import AdminRoute from './components/AdminRoute';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 import ExplorePage from './pages/Explore/ExplorePage';
@@ -15,6 +16,16 @@ import QuizPlayPage from './pages/Quiz/QuizPlayPage';
 import QuizResultPage from './pages/Quiz/QuizResultPage';
 import QuizRankingPage from './pages/Quiz/QuizRankingPage';
 import CreateQuizPage from './pages/Quiz/CreateQuizPage';
+import ListsPage from './pages/Lists/ListsPage';
+import ListDetailPage from './pages/Lists/ListDetailPage';
+import CreateListPage from './pages/Lists/CreateListPage';
+import NewsPage from './pages/News/NewsPage';
+import NewsDetailPage from './pages/News/NewsDetailPage';
+import AchievementsPage from './pages/Achievements/AchievementsPage';
+import AdminDashboardPage from './pages/Admin/AdminDashboardPage';
+import AdminUsersPage from './pages/Admin/AdminUsersPage';
+import AdminNewsPage from './pages/Admin/AdminNewsPage';
+import AdminAchievementsPage from './pages/Admin/AdminAchievementsPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -42,6 +53,21 @@ function AppRoutes() {
         <Route path="/quiz/:id/play" element={<QuizPlayPage />} />
         <Route path="/quiz/:id/resultado" element={<QuizResultPage />} />
         <Route path="/quiz/:id/ranking" element={<QuizRankingPage />} />
+
+        <Route path="/listas" element={<ListsPage />} />
+        <Route path="/listas/criar" element={<PrivateRoute><CreateListPage /></PrivateRoute>} />
+        <Route path="/listas/:id/editar" element={<PrivateRoute><CreateListPage mode="edit" /></PrivateRoute>} />
+        <Route path="/listas/:id" element={<ListDetailPage />} />
+
+        <Route path="/noticias" element={<NewsPage />} />
+        <Route path="/noticias/:id" element={<NewsDetailPage />} />
+
+        <Route path="/conquistas" element={<AchievementsPage />} />
+
+        <Route path="/admin" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+        <Route path="/admin/usuarios" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
+        <Route path="/admin/noticias" element={<AdminRoute><AdminNewsPage /></AdminRoute>} />
+        <Route path="/admin/conquistas" element={<AdminRoute><AdminAchievementsPage /></AdminRoute>} />
       </Routes>
     </>
   );

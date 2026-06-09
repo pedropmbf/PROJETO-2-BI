@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import prisma from '../lib/prisma';
 import { authenticate, AuthRequest } from '../middlewares/auth.middleware';
+import { grantAchievement } from '../utils/achievements.service';
 
 const router = Router();
 router.use(authenticate);
@@ -29,6 +30,7 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       include: { game: true },
     });
 
+    await grantAchievement(req.userId!, 'GAME_ADDED');
     res.status(201).json(userGame);
   } catch (err: any) {
     if (err.code === 'P2002') {

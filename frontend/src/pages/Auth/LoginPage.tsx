@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { getErrorMessage } from '../../utils/getErrorMessage';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -18,8 +19,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate('/explore');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao fazer login');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao fazer login'));
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { Game } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
+import { getErrorMessage } from '../../utils/getErrorMessage';
 
 export default function ExplorePage() {
   const { isAuthenticated } = useAuth();
@@ -41,8 +42,8 @@ export default function ExplorePage() {
     try {
       await api.post('/api/library', { ...game, status: 'backlog' });
       setSuccess(`"${game.title}" adicionado ao backlog!`);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao adicionar');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao adicionar'));
     } finally {
       setAdding(null);
     }

@@ -35,7 +35,9 @@ const fakeUser = {
   email: 'gamer01@test.com',
   passwordHash: 'hashed_password',
   avatarUrl: null,
+  role: 'USER' as const,
   createdAt: new Date(),
+  updatedAt: new Date(),
 };
 
 beforeEach(() => {

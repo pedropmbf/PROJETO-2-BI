@@ -7,6 +7,7 @@ Cada caso de uso segue o padrão: **Ator, Pré-condições, Fluxo Principal, Flu
 **Atores:**
 - **Não autenticado** — qualquer pessoa que acessa o sistema sem login
 - **Autenticado** — usuário com sessão ativa (token JWT válido)
+- **Administrador** — usuário autenticado com `role = ADMIN`; acessa a área `/admin` e os recursos protegidos pelo middleware `requireAdmin`
 
 ---
 
@@ -503,3 +504,196 @@ Cada caso de uso segue o padrão: **Ator, Pré-condições, Fluxo Principal, Flu
 - 5a. Erro interno → exibe "Erro ao excluir conta"
 
 **Pós-condições:** Conta e todas as entidades relacionadas excluídas; sessão encerrada.
+
+---
+
+## UC27 — Criar Lista de Jogos
+
+**Ator:** Autenticado
+**Pré-condições:** Usuário está logado.
+
+**Fluxo Principal:**
+1. O usuário acessa `/listas` e clica em "+ Nova Lista"
+2. Preenche título, descrição (opcional) e define se a lista é pública
+3. Busca jogos na RAWG e adiciona à lista
+4. Clica em "Criar Lista"
+5. O sistema valida e salva a lista com seus itens (`POST /api/lists`)
+6. O usuário é redirecionado para o detalhe da lista criada
+7. Se for a primeira lista do usuário, a conquista `FIRST_LIST` é desbloqueada
+
+**Fluxos Alternativos:**
+- 4a. Título vazio → exibe "Título é obrigatório" (HTTP 400)
+- 1a. Usuário não autenticado → redireciona para `/login`
+
+**Pós-condições:** GameList criada com seus GameListItem; conquista concedida quando aplicável.
+
+---
+
+## UC28 — Editar Lista de Jogos
+
+**Ator:** Autenticado
+**Pré-condições:** Usuário é o dono da lista.
+
+**Fluxo Principal:**
+1. No detalhe da lista, o usuário clica em "Editar"
+2. O sistema carrega `/listas/:id/editar` via `GET /api/lists/:id/edit` (dono, mesmo se privada)
+3. O usuário altera título, descrição, visibilidade e/ou os jogos
+4. Clica em "Salvar alterações"
+5. O sistema valida e envia `PUT /api/lists/:id`, substituindo os itens em transação
+
+**Fluxos Alternativos:**
+- 2a. Lista não pertence ao usuário → API retorna 403 "Sem permissão"
+- 4a. Título vazio → exibe "Título é obrigatório" (HTTP 400)
+
+**Pós-condições:** Lista e itens atualizados em transação.
+
+---
+
+## UC29 — Excluir Lista de Jogos
+
+**Ator:** Autenticado
+**Pré-condições:** Usuário é o dono da lista.
+
+**Fluxo Principal:**
+1. No detalhe da lista, o usuário clica em "Excluir"
+2. Confirma a exclusão
+3. O sistema envia `DELETE /api/lists/:id` e remove a lista e seus itens (cascade)
+4. O usuário é redirecionado para `/listas`
+
+**Fluxos Alternativos:**
+- 2a. Usuário cancela → nenhuma alteração
+- 1a. Lista de outro usuário → API retorna 403 "Sem permissão"
+
+**Pós-condições:** GameList e GameListItem excluídos.
+
+---
+
+## UC30 — Visualizar Listas de Jogos
+
+**Ator:** Não autenticado
+**Pré-condições:** Nenhuma.
+
+**Fluxo Principal:**
+1. O usuário acessa `/listas`
+2. O sistema exibe as listas públicas (`GET /api/lists`); se autenticado, também exibe "Minhas Listas" (`GET /api/lists/mine`)
+3. Ao clicar em uma lista, vê o detalhe com os jogos (`GET /api/lists/:id`)
+
+**Fluxos Alternativos:**
+- 3a. Lista privada de outro usuário → API retorna 403 "Lista privada"
+- 2a. Nenhuma lista → exibe mensagem informativa
+
+**Pós-condições:** Listas e/ou detalhe exibidos.
+
+---
+
+## UC31 — Visualizar Notícias
+
+**Ator:** Não autenticado
+**Pré-condições:** Existe ao menos uma notícia publicada.
+
+**Fluxo Principal:**
+1. O usuário acessa `/noticias`
+2. O sistema exibe as notícias publicadas (`GET /api/news`), mais recentes primeiro
+3. Ao clicar, vê o conteúdo completo (`GET /api/news/:id`)
+
+**Fluxos Alternativos:**
+- 3a. Notícia inexistente ou rascunho → HTTP 404 "Notícia não encontrada"
+- 2a. Nenhuma notícia publicada → exibe mensagem informativa
+
+**Pós-condições:** Notícias exibidas ao público.
+
+---
+
+## UC32 — Gerenciar Notícias
+
+**Ator:** Administrador
+**Pré-condições:** Usuário autenticado com `role = ADMIN`.
+
+**Fluxo Principal:**
+1. O administrador acessa `/admin/noticias`
+2. O sistema lista todas as notícias, inclusive rascunhos (`GET /api/news/admin/all`)
+3. Cria uma notícia (título, resumo, capa, conteúdo, publicar?) via `POST /api/news`
+4. Pode editar (`PUT /api/news/:id`) ou excluir (`DELETE /api/news/:id`)
+
+**Fluxos Alternativos:**
+- 3a. Título ou conteúdo vazio → HTTP 400 "Título é obrigatório" / "Conteúdo é obrigatório"
+- 1a. Usuário sem papel ADMIN → `requireAdmin` retorna 403 "Acesso restrito a administradores"
+
+**Pós-condições:** NewsPost criado/atualizado/excluído.
+
+---
+
+## UC33 — Visualizar e Desbloquear Conquistas
+
+**Ator:** Autenticado
+**Pré-condições:** Nenhuma (para ver); ação correspondente realizada (para desbloquear).
+
+**Fluxo Principal:**
+1. O usuário acessa `/conquistas`
+2. O sistema exibe todas as conquistas com status desbloqueada/bloqueada (`GET /api/achievements/mine`)
+3. Ao executar ações no app (criar 1ª lista, 1ª avaliação, 1º quiz, 1º post, adicionar 1º jogo), o sistema concede a conquista correspondente de forma idempotente
+
+**Fluxos Alternativos:**
+- 1a. Usuário não autenticado → exibe apenas as definições (`GET /api/achievements`), sem status
+- 3a. Conquista já desbloqueada → concessão não duplica (upsert)
+
+**Pós-condições:** UserAchievement criado quando a ação dispara a conquista.
+
+---
+
+## UC34 — Gerenciar Conquistas
+
+**Ator:** Administrador
+**Pré-condições:** Usuário autenticado com `role = ADMIN`.
+
+**Fluxo Principal:**
+1. O administrador acessa `/admin/conquistas`
+2. Cria uma conquista (código, título, descrição, ícone, pontos) via `POST /api/achievements`
+3. Pode editar (`PUT /api/achievements/:id`) ou excluir (`DELETE /api/achievements/:id`)
+
+**Fluxos Alternativos:**
+- 2a. Código vazio ou em formato inválido (não `A-Z0-9_`) → HTTP 400
+- 2b. Código já existente → HTTP 409 "Já existe uma conquista com esse código"
+- 1a. Usuário sem papel ADMIN → 403 "Acesso restrito a administradores"
+
+**Pós-condições:** Achievement criado/atualizado/excluído.
+
+---
+
+## UC35 — Gerenciar Usuários (Admin)
+
+**Ator:** Administrador
+**Pré-condições:** Usuário autenticado com `role = ADMIN`.
+
+**Fluxo Principal:**
+1. O administrador acessa `/admin/usuarios`
+2. O sistema lista todos os usuários com papel e contadores (`GET /api/admin/users`)
+3. Pode promover/rebaixar o papel de outro usuário (`PATCH /api/admin/users/:id/role`)
+4. Pode excluir outro usuário (`DELETE /api/admin/users/:id`), com cascade nas relações
+
+**Fluxos Alternativos:**
+- 3a. Tentar alterar o próprio papel → HTTP 400 "Você não pode alterar o seu próprio papel"
+- 4a. Tentar excluir a própria conta por aqui → HTTP 400
+- 3b. Valor de role diferente de USER/ADMIN → HTTP 400
+- 1a. Usuário sem papel ADMIN → 403 "Acesso restrito a administradores"
+
+**Pós-condições:** Papel alterado ou usuário removido.
+
+---
+
+## UC36 — Acessar Painel Administrativo
+
+**Ator:** Administrador
+**Pré-condições:** Usuário autenticado com `role = ADMIN`.
+
+**Fluxo Principal:**
+1. Após o login, o link "Admin" aparece na navbar (o `role` vem no objeto do usuário)
+2. O administrador acessa `/admin` (protegido pelo `AdminRoute` no front)
+3. O sistema exibe estatísticas da plataforma (`GET /api/admin/stats`): usuários, quizzes, listas, notícias e conquistas
+4. A partir do painel, navega para gestão de usuários, notícias e conquistas
+
+**Fluxos Alternativos:**
+- 2a. Usuário comum tenta acessar `/admin` → `AdminRoute` redireciona para `/`
+- 2b. Requisição direta à API sem papel ADMIN → `requireAdmin` retorna 403
+
+**Pós-condições:** Painel administrativo exibido ao administrador.

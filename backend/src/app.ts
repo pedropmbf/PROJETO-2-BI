@@ -9,6 +9,10 @@ import forumRoutes from './routes/forum.routes';
 import rankingRoutes from './routes/ranking.routes';
 import usersRoutes from './routes/users.routes';
 import quizRoutes from './routes/quiz.routes';
+import listsRoutes from './routes/lists.routes';
+import newsRoutes from './routes/news.routes';
+import achievementsRoutes from './routes/achievements.routes';
+import adminRoutes from './routes/admin.routes';
 
 dotenv.config();
 
@@ -29,5 +33,9 @@ app.use('/api/forum', forumRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/quizzes', quizRoutes);
+app.use('/api/lists', listsRoutes);
+app.use('/api/news', newsRoutes);
+app.use('/api/achievements', achievementsRoutes);
+app.use('/api/admin', adminRoutes);
 
 export default app;

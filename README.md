@@ -108,9 +108,13 @@ gamelog/
 │   │   │   ├── Reviews/        # Avaliações
 │   │   │   ├── Forum/          # Fórum e posts
 |   |   |   ├── Quiz/           # Quiz
+│   │   │   ├── Lists/          # Listas de jogos do usuário
+│   │   │   ├── News/           # Notícias (blog)
+│   │   │   ├── Achievements/   # Conquistas
+│   │   │   ├── Admin/          # Painel administrativo
 │   │   │   ├── Ranking/        # Ranking de jogadores
 │   │   │   └── Profile/        # Perfil do usuário
-│   │   ├── components/         # Componentes compartilhados (Navbar)
+│   │   ├── components/         # Componentes compartilhados (Navbar, AdminRoute)
 │   │   ├── contexts/           # AuthContext (gerenciamento de sessão)
 │   │   ├── services/           # Cliente Axios (api.ts)
 │   │   └── types/              # Tipos TypeScript compartilhados
@@ -165,6 +169,32 @@ gamelog/
 | PUT    | /api/quizzes/:id              | Sim  | Editar quiz próprio                |
 | DELETE | /api/quizzes/:id              | Sim  | Excluir quiz próprio               |
 | POST   | /api/quizzes/:id/submit       | Sim  | Submeter respostas (upsert score)  |
+| GET    | /api/lists                    | Não  | Listar listas públicas de jogos    |
+| GET    | /api/lists/mine               | Sim  | Minhas listas                      |
+| GET    | /api/lists/:id                | Não  | Detalhe de uma lista pública       |
+| POST   | /api/lists                    | Sim  | Criar lista                        |
+| PUT    | /api/lists/:id                | Sim  | Editar lista própria               |
+| DELETE | /api/lists/:id                | Sim  | Excluir lista própria              |
+| POST   | /api/lists/:id/items          | Sim  | Adicionar jogo à lista             |
+| DELETE | /api/lists/:id/items/:itemId  | Sim  | Remover jogo da lista              |
+| GET    | /api/news                     | Não  | Listar notícias publicadas         |
+| GET    | /api/news/:id                 | Não  | Ver notícia                        |
+| GET    | /api/news/admin/all           | Admin| Listar todas (inclui rascunhos)    |
+| POST   | /api/news                     | Admin| Criar notícia                      |
+| PUT    | /api/news/:id                 | Admin| Editar notícia                     |
+| DELETE | /api/news/:id                 | Admin| Excluir notícia                    |
+| GET    | /api/achievements             | Não  | Listar conquistas                  |
+| GET    | /api/achievements/mine        | Sim  | Minhas conquistas (com status)     |
+| POST   | /api/achievements             | Admin| Criar conquista                    |
+| PUT    | /api/achievements/:id         | Admin| Editar conquista                   |
+| DELETE | /api/achievements/:id         | Admin| Excluir conquista                  |
+| GET    | /api/admin/stats              | Admin| Contagens para o painel            |
+| GET    | /api/admin/users              | Admin| Listar usuários                    |
+| PATCH  | /api/admin/users/:id/role     | Admin| Alterar papel (USER/ADMIN)         |
+| DELETE | /api/admin/users/:id          | Admin| Excluir usuário                    |
+
+> **Admin** = requer autenticação **e** papel `ADMIN` (campo `role` no usuário). Veja
+> como promover um usuário em [docs/ambiente-setup.md](docs/ambiente-setup.md).
 
 ## Comandos Úteis
 
@@ -202,7 +232,7 @@ O projeto adota a estratégia exigida pela rubric: testes nos três níveis (uni
 cd backend
 npm run test:coverage
 # Gera: coverage/index.html, coverage/lcov.info, test-report/index.html, test-report/results.json
-# Meta: lines >= 70% (atualmente ~79%)
+# Meta: lines >= 70% (atualmente ~89%)
 
 # 2) E2E (com backend e frontend rodando em outros terminais)
 cd backend && npm run dev          # terminal 1
@@ -234,18 +264,25 @@ npm run lint:report    # gera backend/eslint-report.html
 ```
 File              | % Stmts | % Branch | % Funcs | % Lines |
 ------------------|---------|----------|---------|---------|
-All files         |   76.23 |    75.34 |   85.10 |   78.94 |
- routes           |   74.59 |    70.83 |   82.92 |   77.44 |
- utils            |   95.00 |    95.45 |  100.00 |  100.00 |
+All files         |   89.18 |    89.39 |   98.76 |   88.83 |
+ middlewares      |   94.11 |   100.00 |  100.00 |   94.11 |
+ routes           |   89.25 |    89.70 |   98.57 |   88.25 |
+ utils            |   86.36 |    86.53 |  100.00 |   96.55 |
 ```
 
-89 testes verdes em 10 arquivos (18 unitários + 71 integração) + 2 specs E2E.
+> Meta de linhas ≥ 70% superada com folga (**88,83%**). Todos os CRUDs (biblioteca, avaliações,
+> fórum, quiz, listas, notícias, conquistas) e a área admin têm testes dos caminhos principais
+> e dos fluxos de erro (401/403/404/409/400).
+
+179 testes verdes em 15 arquivos (21 unitários + 158 integração) + 2 specs E2E.
 
 ## Documentação
 
+- [Requisitos (Requirements)](docs/requisitos.md) — pré-requisitos, versões e variáveis de ambiente
+- [Ambiente e Execução](docs/ambiente-setup.md) — guia passo a passo para rodar em outro PC + cheat-sheet de comandos
 - [Escopo e Stack](docs/escopo.md)
-- [Casos de Uso](docs/casos-de-uso.md) — **26 casos de uso** completos (UC01–UC26)
-- [Casos de Teste](docs/casos-de-teste.md) — **23 casos de teste** (CT-01–CT-23) com 100% aprovação
+- [Casos de Uso](docs/casos-de-uso.md) — **36 casos de uso** completos (UC01–UC36)
+- [Casos de Teste](docs/casos-de-teste.md) — **36 casos de teste** (CT-01–CT-36) com 100% aprovação
 - [E2E (Playwright) README](e2e/README.md) — instruções para reproduzir CT-16 e CT-17
 
 ## Equipe

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import api from '../../services/api';
 import type { Review, Game, UserGame } from '../../types';
+import { getErrorMessage } from '../../utils/getErrorMessage';
 
 interface SelectedGame {
   rawgId: number;
@@ -29,11 +30,6 @@ export default function ReviewsPage() {
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchMyReviews();
-    fetchLibrary();
-  }, []);
-
   const fetchMyReviews = async () => {
     setLoading(true);
     try {
@@ -54,6 +50,9 @@ export default function ReviewsPage() {
       setLibraryGames([]);
     }
   };
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- carregamento inicial dos dados
+  useEffect(() => { fetchMyReviews(); fetchLibrary(); }, []);
 
   const searchGames = async (e: FormEvent) => {
     e.preventDefault();
@@ -92,8 +91,8 @@ export default function ReviewsPage() {
         setReviews((prev) => [data, ...prev]);
       }
       resetForm();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao salvar avaliação');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao salvar avaliação'));
     }
   };
 

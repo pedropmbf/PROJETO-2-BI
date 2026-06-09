@@ -35,6 +35,7 @@ export default function LibraryPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps -- recarrega ao mudar o filtro
   useEffect(() => { fetchLibrary(); }, [filter]);
 
   const updateStatus = async (id: number, status: GameStatus) => {

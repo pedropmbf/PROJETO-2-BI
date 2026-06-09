@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
+import { getErrorMessage } from '../../utils/getErrorMessage';
 
 interface QuestionForm {
   text: string;
@@ -36,7 +37,7 @@ export default function CreateQuizPage({ mode = 'create' }: Props) {
         setTitle(data.title);
         setDescription(data.description || '');
         setQuestions(
-          (data.questions || []).map((q: any) => ({
+          (data.questions || []).map((q: { text: string; options: string[]; correctIndex?: number }) => ({
             text: q.text,
             options: [...q.options] as [string, string, string, string],
             correctIndex: q.correctIndex ?? 0,
@@ -97,8 +98,8 @@ export default function CreateQuizPage({ mode = 'create' }: Props) {
         const { data } = await api.post('/api/quizzes', { title, description, questions });
         navigate(`/quiz/${data.id}/play`);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || `Erro ao ${isEdit ? 'atualizar' : 'criar'} quiz`);
+    } catch (err) {
+      setError(getErrorMessage(err, `Erro ao ${isEdit ? 'atualizar' : 'criar'} quiz`));
     } finally {
       setLoading(false);
     }

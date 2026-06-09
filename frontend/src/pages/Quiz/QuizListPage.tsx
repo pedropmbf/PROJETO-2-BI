@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { getErrorMessage } from '../../utils/getErrorMessage';
 
 interface Quiz {
   id: number;
@@ -30,8 +31,8 @@ export default function QuizListPage() {
     try {
       await api.delete(`/api/quizzes/${quizId}`);
       setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Erro ao excluir quiz');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Erro ao excluir quiz'));
     }
   };
 

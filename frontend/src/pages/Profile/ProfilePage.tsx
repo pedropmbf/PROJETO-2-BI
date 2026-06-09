@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { User } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
+import { getErrorMessage } from '../../utils/getErrorMessage';
 
 export default function ProfilePage() {
   const { logout } = useAuth();
@@ -35,8 +36,8 @@ export default function ProfilePage() {
       setProfile((prev) => prev ? { ...prev, ...data } : prev);
       setSuccess('Perfil atualizado com sucesso!');
       setEditing(false);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao atualizar perfil');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao atualizar perfil'));
     }
   };
 
@@ -49,8 +50,8 @@ export default function ProfilePage() {
       await api.delete('/api/users/me');
       logout();
       navigate('/login', { replace: true });
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao excluir conta');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao excluir conta'));
     }
   };
 

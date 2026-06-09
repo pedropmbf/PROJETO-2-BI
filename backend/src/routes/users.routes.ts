@@ -15,6 +15,7 @@ router.get('/me', async (req: AuthRequest, res: Response): Promise<void> => {
         username: true,
         email: true,
         avatarUrl: true,
+        role: true,
         createdAt: true,
         _count: {
           select: {
@@ -42,7 +43,7 @@ router.put('/me', async (req: AuthRequest, res: Response): Promise<void> => {
     const updated = await prisma.user.update({
       where: { id: req.userId! },
       data: { username, avatarUrl },
-      select: { id: true, username: true, email: true, avatarUrl: true },
+      select: { id: true, username: true, email: true, avatarUrl: true, role: true },
     });
     res.json(updated);
   } catch (err: any) {

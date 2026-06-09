@@ -4,12 +4,12 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Usuário admin para os quizzes oficiais
+  // Usuário admin para os quizzes oficiais e a área administrativa
   const adminHash = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@gamelog.com' },
-    update: {},
-    create: { username: 'GameLog_Official', email: 'admin@gamelog.com', passwordHash: adminHash },
+    update: { role: 'ADMIN' },
+    create: { username: 'GameLog_Official', email: 'admin@gamelog.com', passwordHash: adminHash, role: 'ADMIN' },
   });
 
   // Quizzes oficiais
@@ -219,6 +219,43 @@ async function main() {
     } else {
       console.log(`- Quiz já existe: ${quizData.title}`);
     }
+  }
+
+  // Conquistas (definições gerenciadas pelo admin, desbloqueadas por ação)
+  const achievements = [
+    { code: 'FIRST_LIST', title: 'Colecionador', description: 'Crie sua primeira lista de jogos.', icon: '📋', points: 10 },
+    { code: 'FIRST_REVIEW', title: 'Crítico de Plantão', description: 'Publique sua primeira avaliação.', icon: '✍️', points: 10 },
+    { code: 'FIRST_QUIZ', title: 'Mestre do Quiz', description: 'Crie seu primeiro quiz personalizado.', icon: '🧠', points: 15 },
+    { code: 'FIRST_POST', title: 'Voz da Comunidade', description: 'Faça sua primeira publicação no fórum.', icon: '💬', points: 10 },
+    { code: 'GAME_ADDED', title: 'Bem-vindo à Biblioteca', description: 'Adicione seu primeiro jogo à biblioteca.', icon: '🎮', points: 5 },
+  ];
+  for (const ach of achievements) {
+    await prisma.achievement.upsert({
+      where: { code: ach.code },
+      update: { title: ach.title, description: ach.description, icon: ach.icon, points: ach.points },
+      create: ach,
+    });
+    console.log(`✓ Conquista pronta: ${ach.title}`);
+  }
+
+  // Notícia de exemplo (publicada)
+  const newsTitle = 'Bem-vindo ao GameLog!';
+  const existingNews = await prisma.newsPost.findFirst({ where: { title: newsTitle } });
+  if (!existingNews) {
+    await prisma.newsPost.create({
+      data: {
+        authorId: admin.id,
+        title: newsTitle,
+        summary: 'Conheça as novidades da plataforma: listas, conquistas e muito mais.',
+        content:
+          'O GameLog agora conta com listas temáticas de jogos, um sistema de conquistas e uma seção de notícias. ' +
+          'Crie sua primeira lista, desbloqueie conquistas jogando e fique por dentro das atualizações por aqui!',
+        published: true,
+      },
+    });
+    console.log(`✓ Notícia criada: ${newsTitle}`);
+  } else {
+    console.log(`- Notícia já existe: ${newsTitle}`);
   }
 
   console.log('\nSeed concluído!');

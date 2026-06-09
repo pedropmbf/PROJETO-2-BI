@@ -1,10 +1,62 @@
+export type Role = 'USER' | 'ADMIN';
+
 export interface User {
   id: number;
   username: string;
   email: string;
   avatarUrl?: string;
+  role: Role;
   createdAt: string;
   _count?: { userGames: number; reviews: number; posts: number };
+}
+
+export interface GameListItem {
+  id: number;
+  rawgId: number;
+  title: string;
+  coverImage?: string;
+}
+
+export interface GameList {
+  id: number;
+  title: string;
+  description?: string;
+  isPublic: boolean;
+  createdAt: string;
+  user?: { username: string };
+  items?: GameListItem[];
+  _count?: { items: number };
+}
+
+export interface NewsPost {
+  id: number;
+  title: string;
+  summary?: string;
+  content: string;
+  coverImage?: string;
+  published: boolean;
+  createdAt: string;
+  author?: { username: string };
+}
+
+export interface Achievement {
+  id: number;
+  code: string;
+  title: string;
+  description: string;
+  icon?: string;
+  points: number;
+  unlocked?: boolean;
+  unlockedAt?: string | null;
+}
+
+export interface AdminUser {
+  id: number;
+  username: string;
+  email: string;
+  role: Role;
+  createdAt: string;
+  _count?: { quizzes: number; gameLists: number; reviews: number };
 }
 
 export interface Game {

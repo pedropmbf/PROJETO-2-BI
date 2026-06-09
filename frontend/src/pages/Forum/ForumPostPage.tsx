@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import type { ForumPost } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
+import { getErrorMessage } from '../../utils/getErrorMessage';
 
 export default function ForumPostPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,8 +31,8 @@ export default function ForumPostPage() {
       const { data } = await api.post(`/api/forum/${id}/comments`, { content: comment });
       setPost((prev) => prev ? { ...prev, comments: [...(prev.comments || []), data] } : prev);
       setComment('');
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao comentar');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao comentar'));
     }
   };
 
@@ -68,8 +69,8 @@ export default function ForumPostPage() {
       const { data } = await api.put(`/api/forum/${id}`, { title: editTitle, content: editContent });
       setPost((prev) => prev ? { ...prev, title: data.title, content: data.content } : prev);
       cancelEditPost();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao editar post');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao editar post'));
     }
   };
 
@@ -102,8 +103,8 @@ export default function ForumPostPage() {
         comments: prev.comments?.map((c) => c.id === commentId ? { ...c, content: data.content } : c),
       } : prev);
       cancelEditComment();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Erro ao editar comentário');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Erro ao editar comentário'));
     }
   };
 
